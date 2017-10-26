@@ -138,11 +138,11 @@ class SQL {
 		if (!isset(self::$_connections[$connection]["vnr"])) {
 			if (!isset(self::$_connections[$connection]) && isset($_ENV["config"]["db"][$connection]["conn"])) self::init($connection, $_ENV["config"]["db"][$connection]["conn"]);
 			if (!isset(self::$_connections[$connection])) {
-				throw new Exception("Kein Verbindungsschema für Datenbank Nummer".$connection."!");
+				throw new \Exception("Kein Verbindungsschema für Datenbank Nummer".$connection."!");
 				exit(1);
 			}
 			if (!function_exists("mysqli_connect")) {
-				throw new Exception("Die MySQLi-Extension wurde nicht auf dem Server installiert!");
+				throw new \Exception("Die MySQLi-Extension wurde nicht auf dem Server installiert!");
 				exit();
 			}
 			self::$_connections[$connection]["vnr"] = mysqli_connect(self::$_connections[$connection]["host"], self::$_connections[$connection]["user"], self::$_connections[$connection]["password"], self::$_connections[$connection]["database"], self::$_connections[$connection]["port"]);
@@ -451,6 +451,6 @@ class SQL {
 		}
 }
 
-class SQLException extends Exception {
+class SQLException extends \Exception {
 
 }
