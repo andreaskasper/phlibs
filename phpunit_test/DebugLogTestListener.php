@@ -5,7 +5,7 @@
  * PHP version 5.5.
  */
 
-namespace PHPMailer\Test;
+namespace phlibs\Test;
 
 class DebugLogTestListener extends \PHPUnit_Framework_BaseTestListener
 {
