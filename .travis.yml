@@ -11,6 +11,8 @@ install:
   - composer remove --no-update --no-scripts --dev andreaskasper/phlibs
   - composer install
   
+script: ./vendor/bin/phpunit --configuration ./travis.phpunit.xml.dist
+  
 stages:
   - coding-standard
   - test
