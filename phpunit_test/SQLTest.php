@@ -23,7 +23,7 @@ final class SQLTest extends TestCase {
 		}		
 	}
 	
-	public function testcmd() {
+	/*public function testcmd() {
 		try {
 			$db = new SQL(0);
 			$db->cmd('CREATE TABLE `testtable` (
@@ -43,7 +43,7 @@ final class SQLTest extends TestCase {
 		} catch (Exception $ex) {
 				$this->fail("Failed at SQL init");
 		}		
-	}
+	}*/
 	
 	
 	public function testconvtxt() {
