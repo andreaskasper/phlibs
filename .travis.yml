@@ -1,11 +1,16 @@
 language: php
 
+services:
+  - mysql
+
 cache:
   directories:
     - $HOME/.composer/cache
 
 before_install:
   - sudo apt-get update -qq
+  - mysql -e 'CREATE DATABASE IF NOT EXISTS main;'
+  - mysql -e 'CREATE DATABASE IF NOT EXISTS test;'
 
 install:
   - composer remove --no-update --no-scripts --dev andreaskasper/phlibs
