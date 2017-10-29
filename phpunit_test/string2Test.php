@@ -13,7 +13,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * PHPMailer - PHP email transport unit test class.
  */
-final class SQLTest extends TestCase {
+final class string2Test extends TestCase {
 
 	public function testvall() {
 		$this->assertEquals(123.45, string2::vall("123.45"));
