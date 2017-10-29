@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class SQLTest extends TestCase {
 	
-	public function testinit() {
+	/*public function testinit() {
 		try {
 			SQL::init(0, "mysql://root@localhost/test/");
 		} catch (Exception $ex) {
@@ -51,6 +51,6 @@ final class SQLTest extends TestCase {
 		foreach ($test as $k => $v) {
 			$this->assertEquals($v, SQL::convtxt($k));
 		}
-	}
+	}*/
 	
 }
