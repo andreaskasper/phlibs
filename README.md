@@ -4,4 +4,10 @@ Build status: [![Build Status](https://travis-ci.org/andreaskasper/phlibs.svg)](
 
 [![Latest Stable Version](https://poser.pugx.org/andreaskasper/phlibs/v/stable.svg)](https://packagist.org/packages/andreaskasper/phlibs) [![Total Downloads](https://poser.pugx.org/andreaskasper/phlibs/downloads)](https://packagist.org/packages/andreaskasper/phlibs) [![Latest Unstable Version](https://poser.pugx.org/andreaskasper/phlibs/v/unstable.svg)](https://packagist.org/packages/andreaskasper/phlibs) [![License](https://poser.pugx.org/andreaskasper/phlibs/license.svg)](https://packagist.org/packages/andreaskasper/phlibs)
 
-##Features
+# Features
+
+# Steps
+- [x] Build a base test image to test this build process (Travis/Docker)
+- [ ] Build tests
+- [ ] Gnomes
+- [ ] Profit
