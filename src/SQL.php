@@ -59,7 +59,7 @@ class SQL {
 	 * @param integer $defaultconnection Die Verbindnungsnummer die Standardmäßig verwendet werden soll. Wenn zusätzlich die DBuri angegeben ist, wird diese überschrieben.
 	 * @param uri $DBuri URI der MySQL-Datenbank. (optional)
 	 */
-	function SQL($connectionOrNumber = 0) {
+	function __construct($connectionOrNumber = 0) {
 		if (is_integer($connectionOrNumber)) $this->conn = $this->Verbindungsnr($connectionOrNumber);
 	}
 	
