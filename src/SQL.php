@@ -171,8 +171,10 @@ class SQL {
 			exit(1);
 		};
 		$out = array();
-		if ($result->num_rows > 0)
-			for ($res = array(); $tmp = $result->fetch_array(MYSQLI_BOTH);) $out[] = $tmp;
+		if ($result->num_rows > 0) {
+			if ($key == null) for ($res = array(); $tmp = $result->fetch_array(MYSQLI_BOTH);) $out[] = $tmp;
+			else for ($res = array(); $tmp = $result->fetch_array(MYSQLI_BOTH);) $out[$tmp[$key]] = $tmp;
+		}
 		$result->free();
 		return $out;
 	}
