@@ -3,8 +3,7 @@
  * Klasse zum behandeln von MySQL anfragen
  * @author Andreas Kasper <Andreas.Kasper@plabsi.com>
  * @package ASICMS
- * @version 0.1.20160408
- * LastChange: Umstellung auf mysqli
+ * @version 0.1.20180319
  */
  
  namespace phlibs;
@@ -167,7 +166,7 @@ class SQL {
 	function cmdrows($sql = "", $values = array(), $key = null) {
 		$result = $this->cmd($sql, $values);
 		if (!$result) {
-			throw new SQLException("Ungueltiger SQL-Befehl: (".$sql.")!\r\n".mysql_error(),602);
+			throw new SQLException("Ungueltiger SQL-Befehl: (".$sql.")!\r\n".$this->conn->error,602);
 			exit(1);
 		};
 		$out = array();
