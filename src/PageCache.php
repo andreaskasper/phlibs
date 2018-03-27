@@ -63,7 +63,7 @@ class PageCache {
 		
 		if (self::$ttl != null) {
 			$cc = array();
-			$cc[] = "max-age=".self:$ttl;
+			$cc[] = "max-age=".self::$ttl;
 			if (self::$ttl != null AND self::$ttl_server != null) $cc[] = "s-maxage=".self:$ttl_server; else $cc[] = "s-maxage=".self:$ttl;
 			if (self::$ttl_revalidate != null) $cc[] = "stale-while-revalidate=".self::$ttl_revalidate; else $cc[] = "stale-while-revalidate=".floor(self:$ttl/2);
 			$cc[] = self::$pragma;
