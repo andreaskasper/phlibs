@@ -3,7 +3,8 @@
  * Klasse zum behandeln von MySQL anfragen
  * @author Andreas Kasper <Andreas.Kasper@plabsi.com>
  * @package ASICMS
- * @version 0.1.20180319
+ * @version 0.1.20180516
+ * @lastchange: Bug MYSQL_NUM => MYSQLI_NUM
  */
  
  namespace phlibs;
@@ -209,7 +210,7 @@ class SQL {
 			throw new SQLException("Ungueltiger SQL-Befehl: (".$sql.")!\r\n".mysql_error(), 602);
 		}
 		if ($result->num_rows > 0)
-		$row = $result->fetch_array(MYSQL_NUM);
+		$row = $result->fetch_array(MYSQLI_NUM);
 		return isset($row) ? $row[0] : null;
 	}
 
