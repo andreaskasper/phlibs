@@ -3,8 +3,8 @@
  * Klasse zum behandeln von MySQL anfragen
  * @author Andreas Kasper <Andreas.Kasper@plabsi.com>
  * @package ASICMS
- * @version 0.1.20180516
- * @lastchange: Bug MYSQL_NUM => MYSQLI_NUM
+ * @version 0.1.20180517
+ * @lastchange: Bug Update
  */
  
  namespace phlibs;
@@ -230,13 +230,13 @@ class SQL {
 		
 		$fSet = array();
 		$fWhere = array();
-		foreach ($arr as $key => $v) $fSet[] = ' `'.$key.'` = "'.mysql_real_escape_string($v,$this->Verbindungsnr($conn)).'"';
-		foreach ($ids as $key) $fWhere[] = ' (`'.$key.'` = "'.mysql_real_escape_string($arr[$key],$this->Verbindungsnr($conn)).'")';
+		foreach ($arr as $key => $v) $fSet[] = ' `'.$key.'` = "'.$this->conn->real_escape_string($v).'"';
+		foreach ($ids as $key) $fWhere[] = ' (`'.$key.'` = "'.$this->conn->real_escape_string($arr[$key]).'")';
 
 		$sql = "UPDATE ".$table." SET ".implode(",",$fSet)." WHERE ".implode("AND",$fWhere)." ";
 		if ($LimitAnzahl != -1) $sql .= " LIMIT ".$LimitAnzahl;
 
-		return $this->cmd($conn, $sql);
+		return $this->cmd($sql);
 	}
 
 	function BQSset($arr) {
