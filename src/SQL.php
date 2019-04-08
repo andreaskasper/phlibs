@@ -61,7 +61,7 @@ class SQL {
 		self::$_connections[$ConnNr]["host"] = $a["host"];
 		self::$_connections[$ConnNr]["port"] = $a["port"];
 		self::$_connections[$ConnNr]["user"] = $a["user"];
-		self::$_connections[$ConnNr]["password"] = $a["pass"] ?? "";
+		self::$_connections[$ConnNr]["password"] = (isset($a["pass"])?$a["pass"]:""); //$a["pass"] ?? "";
 		self::$_connections[$ConnNr]["database"] = $b[1];
 		self::$_connections[$ConnNr]["prefix"] = (isset($b[2])?$b[2]:'');
 		return true;
