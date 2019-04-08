@@ -28,8 +28,8 @@ jobs:
       before_install:
       before_script:
       after_script:
-#      php: 5.5
-#      env: CS_CHECK=1
+      php: 7.0
+      env: CS_CHECK=1
     - stage: test
 #      php: 5.5
 #    - php: 5.6
