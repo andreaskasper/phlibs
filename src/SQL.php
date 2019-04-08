@@ -8,6 +8,7 @@
  * 
  * Änderung am 20.01.2019 processes Variable
  * Änderung am 21.01.2019 success Variable
+ * Nur noch ab php Version 7 möglich. Einige Optimierungen dafür.
  */
  
 class SQL {
