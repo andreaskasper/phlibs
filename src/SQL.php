@@ -50,7 +50,8 @@ class SQL {
         return null;
     }
 
-    public static function init(int $ConnNr = 0, string $DBuri) {
+    public static function init(int $ConnNr = null, string $DBuri) {
+	    	if (is_null($ConnNr)) $ConnNr = 0;
 		self::$_connections[$ConnNr]["conn"] = $DBuri;
 		$a = parse_url($DBuri);
 		$b = explode("/", $a["path"]);
