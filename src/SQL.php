@@ -8,6 +8,7 @@
  * 
  * Änderung am 20.01.2019 processes Variable
  * Änderung am 21.01.2019 success Variable
+ * Änderung am 08.05.2019 cmdrows akzeptiert wieder keys
  * Nur noch ab php Version 7 möglich. Einige Optimierungen dafür.
  */
  
@@ -113,8 +114,10 @@ class SQL {
 			return null;
 		};
 		$out = array();
-		if ($result->num_rows > 0)
-			for ($res = array(); $tmp = $result->fetch_array(MYSQLI_BOTH);) $out[] = $tmp;
+		if ($result->num_rows > 0){
+			if (is_null($key)) for ($res = array(); $tmp = $result->fetch_array(MYSQLI_BOTH);) $out[] = $tmp;
+			else for ($res = array(); $tmp = $result->fetch_array(MYSQLI_BOTH);) $out[$tmp[$key]] = $tmp;
+		}
 		$result->free();
 		return $out;
     }
