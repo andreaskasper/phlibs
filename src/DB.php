@@ -10,9 +10,9 @@
  * Änderung am 28.04.2020 Commit
  * Nur noch ab php Version 7 möglich. Einige Optimierungen dafür.
  */
- 
-namespace phlibs;
 
+namespace phlibs;
+ 
 class DB {
     private static $_cache = array();
     private $_connection_id = null;
@@ -25,11 +25,16 @@ class DB {
         self::$_cache[$id]["connectionstring"] = $connectionstring;
         self::$_cache[$id]["user"] = $user;
         self::$_cache[$id]["password"] = $password;
+        self::$_cache[$id]["conn"] = null;
     }
 
     public function __construct(int $id) {
         $this->_connection_id = $id;
-        $this->conn = new PDO(self::$_cache[$id]["connectionstring"],self::$_cache[$id]["user"],self::$_cache[$id]["password"]);
+        if (is_null(self::$_cache[$id]["conn"])) {
+            self::$_cache[$id]["conn"] = new PDO(self::$_cache[$id]["connectionstring"],self::$_cache[$id]["user"],self::$_cache[$id]["password"]);
+            self::$_cache[$id]["conn"]->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        }
+        $this->conn = self::$_cache[$id]["conn"];
     }
 
     public function __get($name) {
@@ -41,8 +46,15 @@ class DB {
     }
 
     public function cmd(string $sql, Array $values = array()) {
-        $this->_lastresult = $this->conn->prepare($sql, array(PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY));
-        if (!$this->_lastresult->execute($values)) trigger_error("Fehler beim ausführen von DB-Befehl (".$sql.")");
+        $keys = array();
+        foreach ($values as $k=>$v) $keys[] = "{".$k."}";
+        $sql = str_replace($keys, $values, $sql); 
+
+        //try {
+        $this->_lastresult = $this->conn->query($sql);
+        /*} catch (Exception $ex) {
+            throw new Exception();
+        }*/
         return $this->_lastresult;
     }
 
@@ -62,7 +74,12 @@ class DB {
         return $rows;
     }
 
+    public function cmdvalue(string $sql, Array $values = array()) {
+        $sth = $this->cmd($sql, $values);
+        $row = $sth->fetch(PDO::FETCH_NUM);
+        return $row[0];
+    }
+
 
 
 }
-
