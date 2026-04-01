@@ -6,9 +6,12 @@
  * symbol placement rules. Acts as the single source of truth for all currency
  * metadata in the phlibs library. Money delegates its symbol/name lookups here.
  *
+ * Covers 115+ active ISO 4217 currencies with correct decimal places
+ * (including 3-decimal currencies like KWD, BHD, OMR and 0-decimal like JPY, KRW).
+ *
  * @author  Andreas Kasper <andreas.kasper@goo1.de>
  * @package phlibs
- * @version 2.0.0
+ * @version 2.1.0
  * @license FreeFoodLicense
  */
 
@@ -23,117 +26,420 @@ class Currency {
 
     /**
      * @var array<string, string> Map of ISO 4217 code => currency symbol.
+     *
+     * Covers all major world currencies. Uses Unicode escapes for non-ASCII symbols.
      */
     private const SYMBOLS = [
-        'AED' => "\u{62F}.\u{625}",
+        // A
+        'AED' => "\u{62F}.\u{625}",   // د.إ
+        'AFN' => "\u{60B}",           // ؋
+        'ALL' => 'L',
+        'AMD' => "\u{058F}",          // ֏
+        'ANG' => "\u{0192}",          // ƒ
+        'AOA' => 'Kz',
         'ARS' => '$',
         'AUD' => 'A$',
-        'BGN' => "\u{43B}\u{432}",
+        'AWG' => "\u{0192}",          // ƒ
+        'AZN' => "\u{20BC}",          // ₼
+        // B
+        'BAM' => 'KM',
+        'BBD' => 'Bds$',
+        'BDT' => "\u{09F3}",          // ৳
+        'BGN' => "\u{43B}\u{432}",    // лв
+        'BHD' => 'BD',
+        'BIF' => 'FBu',
+        'BMD' => '$',
+        'BND' => 'B$',
+        'BOB' => 'Bs.',
         'BRL' => 'R$',
+        'BSD' => '$',
+        'BTN' => 'Nu.',
+        'BWP' => 'P',
+        'BYN' => 'Br',
+        'BZD' => 'BZ$',
+        // C
         'CAD' => 'CA$',
+        'CDF' => 'FC',
         'CHF' => 'CHF',
         'CLP' => '$',
-        'CNY' => "\u{00A5}",
+        'CNY' => "\u{00A5}",          // ¥
         'COP' => '$',
-        'CZK' => "K\u{10D}",
+        'CRC' => "\u{20A1}",          // ₡
+        'CUP' => '$',
+        'CVE' => 'Esc',
+        'CZK' => "K\u{10D}",          // Kč
+        // D
+        'DJF' => 'Fdj',
         'DKK' => 'kr',
-        'EGP' => "\u{00A3}",
-        'EUR' => "\u{20AC}",
-        'GBP' => "\u{00A3}",
+        'DOP' => 'RD$',
+        'DZD' => "\u{62F}.\u{62C}",   // د.ج
+        // E
+        'EGP' => "\u{00A3}",          // £
+        'ERN' => 'Nfk',
+        'ETB' => 'Br',
+        'EUR' => "\u{20AC}",          // €
+        // F
+        'FJD' => 'FJ$',
+        'FKP' => "\u{00A3}",          // £
+        // G
+        'GBP' => "\u{00A3}",          // £
+        'GEL' => "\u{20BE}",          // ₾
+        'GHS' => "GH\u{20B5}",        // GH₵
+        'GIP' => "\u{00A3}",          // £
+        'GMD' => 'D',
+        'GNF' => 'FG',
+        'GTQ' => 'Q',
+        'GYD' => 'GY$',
+        // H
         'HKD' => 'HK$',
+        'HNL' => 'L',
         'HRK' => 'kn',
+        'HTG' => 'G',
         'HUF' => 'Ft',
+        // I
         'IDR' => 'Rp',
-        'ILS' => "\u{20AA}",
-        'INR' => "\u{20B9}",
+        'ILS' => "\u{20AA}",          // ₪
+        'INR' => "\u{20B9}",          // ₹
+        'IQD' => "\u{639}.\u{62F}",   // ع.د
+        'IRR' => "\u{FDFC}",          // ﷼
         'ISK' => 'kr',
-        'JPY' => "\u{00A5}",
-        'KRW' => "\u{20A9}",
+        // J
+        'JMD' => 'J$',
+        'JOD' => 'JD',
+        'JPY' => "\u{00A5}",          // ¥
+        // K
+        'KES' => 'KSh',
+        'KGS' => "\u{43B}\u{432}",    // лв
+        'KHR' => "\u{17DB}",          // ៛
+        'KMF' => 'CF',
+        'KRW' => "\u{20A9}",          // ₩
+        'KWD' => "\u{62F}.\u{643}",   // د.ك
+        'KYD' => 'CI$',
+        'KZT' => "\u{20B8}",          // ₸
+        // L
+        'LAK' => "\u{20AD}",          // ₭
+        'LBP' => "\u{00A3}",          // £
+        'LKR' => 'Rs',
+        'LRD' => 'L$',
+        'LSL' => 'L',
+        'LYD' => 'LD',
+        // M
         'MAD' => 'MAD',
+        'MDL' => 'L',
+        'MGA' => 'Ar',
+        'MKD' => "\u{434}\u{435}\u{43D}", // ден
+        'MMK' => 'K',
+        'MNT' => "\u{20AE}",          // ₮
+        'MOP' => 'MOP$',
+        'MRU' => 'UM',
+        'MUR' => "\u{20A8}",          // ₨
+        'MVR' => 'Rf',
+        'MWK' => 'MK',
         'MXN' => '$',
         'MYR' => 'RM',
+        'MZN' => 'MT',
+        // N
+        'NAD' => 'N$',
+        'NGN' => "\u{20A6}",          // ₦
+        'NIO' => 'C$',
         'NOK' => 'kr',
+        'NPR' => "\u{20A8}",          // ₨
         'NZD' => 'NZ$',
+        // O
+        'OMR' => "\u{FDFC}",          // ﷼
+        // P
+        'PAB' => 'B/.',
         'PEN' => 'S/',
-        'PHP' => "\u{20B1}",
+        'PGK' => 'K',
+        'PHP' => "\u{20B1}",          // ₱
         'PKR' => 'Rs',
-        'PLN' => "z\u{142}",
+        'PLN' => "z\u{142}",          // zł
+        'PYG' => "\u{20B2}",          // ₲
+        // Q
         'QAR' => 'QR',
+        // R
         'RON' => 'lei',
-        'RUB' => "\u{20BD}",
-        'SAR' => "\u{FDFC}",
+        'RSD' => 'din.',
+        'RUB' => "\u{20BD}",          // ₽
+        'RWF' => 'RF',
+        // S
+        'SAR' => "\u{FDFC}",          // ﷼
+        'SBD' => 'SI$',
+        'SCR' => 'SRe',
+        'SDG' => "\u{00A3}",          // £
         'SEK' => 'kr',
         'SGD' => 'S$',
-        'THB' => "\u{0E3F}",
-        'TRY' => "\u{20BA}",
+        'SHP' => "\u{00A3}",          // £
+        'SLE' => 'Le',
+        'SOS' => 'Sh',
+        'SRD' => '$',
+        'SSP' => "\u{00A3}",          // £
+        'STN' => 'Db',
+        'SVC' => '$',
+        'SYP' => "\u{00A3}",          // £
+        'SZL' => 'E',
+        // T
+        'THB' => "\u{0E3F}",          // ฿
+        'TJS' => 'SM',
+        'TMT' => 'T',
+        'TND' => 'DT',
+        'TOP' => 'T$',
+        'TRY' => "\u{20BA}",          // ₺
+        'TTD' => 'TT$',
         'TWD' => 'NT$',
-        'UAH' => "\u{20B4}",
+        'TZS' => 'TSh',
+        // U
+        'UAH' => "\u{20B4}",          // ₴
+        'UGX' => 'USh',
         'USD' => '$',
-        'VND' => "\u{20AB}",
+        'UYU' => '$U',
+        'UZS' => "so\u{02BB}m",       // soʻm
+        // V
+        'VES' => 'Bs.S',
+        'VND' => "\u{20AB}",          // ₫
+        'VUV' => 'VT',
+        // W
+        'WST' => 'WS$',
+        // X
+        'XAF' => 'FCFA',
+        'XCD' => 'EC$',
+        'XOF' => 'CFA',
+        'XPF' => 'F',
+        // Y
+        'YER' => "\u{FDFC}",          // ﷼
+        // Z
         'ZAR' => 'R',
+        'ZMW' => 'ZK',
+        'ZWL' => 'Z$',
     ];
 
     /**
      * @var array<string, string> Map of ISO 4217 code => human-readable name.
      */
     private const NAMES = [
-        'AED' => 'Dirham',
+        // A
+        'AED' => 'UAE Dirham',
+        'AFN' => 'Afghani',
+        'ALL' => 'Lek',
+        'AMD' => 'Armenian Dram',
+        'ANG' => 'Netherlands Antillean Guilder',
+        'AOA' => 'Kwanza',
         'ARS' => 'Argentine Peso',
         'AUD' => 'Australian Dollar',
+        'AWG' => 'Aruban Florin',
+        'AZN' => 'Azerbaijani Manat',
+        // B
+        'BAM' => 'Convertible Mark',
+        'BBD' => 'Barbadian Dollar',
+        'BDT' => 'Taka',
         'BGN' => 'Lev',
+        'BHD' => 'Bahraini Dinar',
+        'BIF' => 'Burundian Franc',
+        'BMD' => 'Bermudian Dollar',
+        'BND' => 'Brunei Dollar',
+        'BOB' => 'Boliviano',
         'BRL' => 'Real',
+        'BSD' => 'Bahamian Dollar',
+        'BTN' => 'Ngultrum',
+        'BWP' => 'Pula',
+        'BYN' => 'Belarusian Ruble',
+        'BZD' => 'Belize Dollar',
+        // C
         'CAD' => 'Canadian Dollar',
-        'CHF' => 'Franc',
+        'CDF' => 'Congolese Franc',
+        'CHF' => 'Swiss Franc',
         'CLP' => 'Chilean Peso',
-        'CNY' => 'Yuan',
+        'CNY' => 'Yuan Renminbi',
         'COP' => 'Colombian Peso',
-        'CZK' => 'Koruna',
-        'DKK' => 'Krone',
+        'CRC' => 'Costa Rican Col\u{F3}n',
+        'CUP' => 'Cuban Peso',
+        'CVE' => 'Cape Verdean Escudo',
+        'CZK' => 'Czech Koruna',
+        // D
+        'DJF' => 'Djiboutian Franc',
+        'DKK' => 'Danish Krone',
+        'DOP' => 'Dominican Peso',
+        'DZD' => 'Algerian Dinar',
+        // E
         'EGP' => 'Egyptian Pound',
+        'ERN' => 'Nakfa',
+        'ETB' => 'Ethiopian Birr',
         'EUR' => 'Euro',
-        'GBP' => 'Pound',
+        // F
+        'FJD' => 'Fijian Dollar',
+        'FKP' => 'Falkland Islands Pound',
+        // G
+        'GBP' => 'Pound Sterling',
+        'GEL' => 'Georgian Lari',
+        'GHS' => 'Ghanaian Cedi',
+        'GIP' => 'Gibraltar Pound',
+        'GMD' => 'Dalasi',
+        'GNF' => 'Guinean Franc',
+        'GTQ' => 'Quetzal',
+        'GYD' => 'Guyanese Dollar',
+        // H
         'HKD' => 'Hong Kong Dollar',
+        'HNL' => 'Lempira',
         'HRK' => 'Kuna',
+        'HTG' => 'Gourde',
         'HUF' => 'Forint',
+        // I
         'IDR' => 'Rupiah',
-        'ILS' => 'Shekel',
-        'INR' => 'Rupee',
-        'ISK' => "Icelandic Kr\u{F3}na",
+        'ILS' => 'New Israeli Shekel',
+        'INR' => 'Indian Rupee',
+        'IQD' => 'Iraqi Dinar',
+        'IRR' => 'Iranian Rial',
+        'ISK' => 'Icelandic Kr\u{F3}na',
+        // J
+        'JMD' => 'Jamaican Dollar',
+        'JOD' => 'Jordanian Dinar',
         'JPY' => 'Yen',
+        // K
+        'KES' => 'Kenyan Shilling',
+        'KGS' => 'Som',
+        'KHR' => 'Riel',
+        'KMF' => 'Comorian Franc',
         'KRW' => 'Won',
+        'KWD' => 'Kuwaiti Dinar',
+        'KYD' => 'Cayman Islands Dollar',
+        'KZT' => 'Tenge',
+        // L
+        'LAK' => 'Lao Kip',
+        'LBP' => 'Lebanese Pound',
+        'LKR' => 'Sri Lankan Rupee',
+        'LRD' => 'Liberian Dollar',
+        'LSL' => 'Loti',
+        'LYD' => 'Libyan Dinar',
+        // M
         'MAD' => 'Moroccan Dirham',
-        'MXN' => 'Peso',
+        'MDL' => 'Moldovan Leu',
+        'MGA' => 'Malagasy Ariary',
+        'MKD' => 'Denar',
+        'MMK' => 'Kyat',
+        'MNT' => 'Tugrik',
+        'MOP' => 'Pataca',
+        'MRU' => 'Ouguiya',
+        'MUR' => 'Mauritian Rupee',
+        'MVR' => 'Rufiyaa',
+        'MWK' => 'Malawian Kwacha',
+        'MXN' => 'Mexican Peso',
         'MYR' => 'Ringgit',
+        'MZN' => 'Metical',
+        // N
+        'NAD' => 'Namibian Dollar',
+        'NGN' => 'Naira',
+        'NIO' => 'C\u{F3}rdoba',
         'NOK' => 'Norwegian Krone',
+        'NPR' => 'Nepalese Rupee',
         'NZD' => 'New Zealand Dollar',
-        'PEN' => 'Peruvian Sol',
-        'PHP' => 'Peso',
+        // O
+        'OMR' => 'Omani Rial',
+        // P
+        'PAB' => 'Balboa',
+        'PEN' => 'Sol',
+        'PGK' => 'Kina',
+        'PHP' => 'Philippine Peso',
         'PKR' => 'Pakistani Rupee',
-        'PLN' => "Z\u{142}oty",
+        'PLN' => 'Z\u{142}oty',
+        'PYG' => 'Guaran\u{ED}',
+        // Q
         'QAR' => 'Qatari Riyal',
-        'RON' => 'Leu',
-        'RUB' => 'Ruble',
-        'SAR' => 'Riyal',
-        'SEK' => 'Krona',
+        // R
+        'RON' => 'Romanian Leu',
+        'RSD' => 'Serbian Dinar',
+        'RUB' => 'Russian Ruble',
+        'RWF' => 'Rwandan Franc',
+        // S
+        'SAR' => 'Saudi Riyal',
+        'SBD' => 'Solomon Islands Dollar',
+        'SCR' => 'Seychellois Rupee',
+        'SDG' => 'Sudanese Pound',
+        'SEK' => 'Swedish Krona',
         'SGD' => 'Singapore Dollar',
+        'SHP' => 'Saint Helena Pound',
+        'SLE' => 'Leone',
+        'SOS' => 'Somali Shilling',
+        'SRD' => 'Surinamese Dollar',
+        'SSP' => 'South Sudanese Pound',
+        'STN' => 'Dobra',
+        'SVC' => 'Salvadoran Col\u{F3}n',
+        'SYP' => 'Syrian Pound',
+        'SZL' => 'Lilangeni',
+        // T
         'THB' => 'Baht',
-        'TRY' => 'Lira',
-        'TWD' => 'Taiwan Dollar',
-        'UAH' => 'Ukrainian Hryvnia',
-        'USD' => 'Dollar',
-        'VND' => 'Vietnamese Dong',
-        'ZAR' => 'Rand',
+        'TJS' => 'Somoni',
+        'TMT' => 'Turkmenistan Manat',
+        'TND' => 'Tunisian Dinar',
+        'TOP' => 'Pa\u{2BB}anga',
+        'TRY' => 'Turkish Lira',
+        'TTD' => 'Trinidad and Tobago Dollar',
+        'TWD' => 'New Taiwan Dollar',
+        'TZS' => 'Tanzanian Shilling',
+        // U
+        'UAH' => 'Hryvnia',
+        'UGX' => 'Ugandan Shilling',
+        'USD' => 'US Dollar',
+        'UYU' => 'Uruguayan Peso',
+        'UZS' => 'Uzbekistani Som',
+        // V
+        'VES' => 'Bol\u{ED}var Soberano',
+        'VND' => 'Dong',
+        'VUV' => 'Vatu',
+        // W
+        'WST' => 'Samoan T\u{101}l\u{101}',
+        // X
+        'XAF' => 'Central African CFA Franc',
+        'XCD' => 'East Caribbean Dollar',
+        'XOF' => 'West African CFA Franc',
+        'XPF' => 'CFP Franc',
+        // Y
+        'YER' => 'Yemeni Rial',
+        // Z
+        'ZAR' => 'South African Rand',
+        'ZMW' => 'Zambian Kwacha',
+        'ZWL' => 'Zimbabwean Dollar',
     ];
 
     /**
-     * @var array<string> Currencies that have no minor units (no decimal places).
+     * @var array<string> Currencies with 0 minor units (no decimal places).
+     *
+     * Per ISO 4217. Note: some sources list CZK/HUF as 2-decimal but in practice
+     * these countries have eliminated minor-unit coins, so they are included here.
      */
-    private const ZERO_DECIMAL = ['CLP', 'CZK', 'HUF', 'IDR', 'ISK', 'JPY', 'KRW', 'VND'];
+    private const ZERO_DECIMAL = [
+        'BIF', 'CLP', 'DJF', 'GNF', 'ISK', 'JPY', 'KMF', 'KRW',
+        'PYG', 'RWF', 'UGX', 'VND', 'VUV',
+        'XAF', 'XOF', 'XPF',
+    ];
+
+    /**
+     * @var array<string> Currencies with 0 decimal places in practice
+     * (officially 2, but minor units are not used in everyday commerce).
+     */
+    private const ZERO_DECIMAL_PRACTICE = [
+        'CZK', 'HUF', 'IDR', 'IRR', 'LAK', 'MMK', 'MNT', 'TZS',
+    ];
+
+    /**
+     * @var array<string> Currencies with 3 minor units (3 decimal places).
+     *
+     * Per ISO 4217. These are mostly Middle Eastern dinars.
+     */
+    private const THREE_DECIMAL = [
+        'BHD', 'IQD', 'JOD', 'KWD', 'LYD', 'OMR', 'TND',
+    ];
 
     /**
      * @var array<string> Currencies where the symbol is placed before the amount.
      */
-    private const SYMBOL_BEFORE = ['AUD', 'BRL', 'CAD', 'GBP', 'HKD', 'MXN', 'NZD', 'SGD', 'USD', 'TWD'];
+    private const SYMBOL_BEFORE = [
+        'AUD', 'BBD', 'BMD', 'BND', 'BRL', 'BSD', 'BZD', 'CAD',
+        'CLP', 'COP', 'CRC', 'CUP', 'DOP', 'FJD', 'FKP', 'GBP',
+        'GHS', 'GIP', 'GYD', 'HKD', 'JMD', 'KYD', 'LRD', 'MOP',
+        'MXN', 'NAD', 'NGN', 'NIO', 'NZD', 'PHP', 'SBD', 'SGD',
+        'SHP', 'SRD', 'SVC', 'TOP', 'TTD', 'TWD', 'USD', 'UYU',
+        'WST', 'XCD', 'ZWL',
+    ];
 
     // ─── Constructors ───────────────────────────────────────────────────
 
@@ -148,10 +454,8 @@ class Currency {
      */
     public function __construct(string $idOrType, ?string $value = null) {
         if ($idOrType === 'id' && $value !== null) {
-            // Legacy support: new Currency("id", "EUR")
             $this->_id = strtoupper(trim($value));
         } else {
-            // Modern: new Currency("EUR")
             $this->_id = strtoupper(trim($idOrType));
         }
         if (empty($this->_id)) {
@@ -226,7 +530,7 @@ class Currency {
      *
      * Returns the code itself if no name is registered.
      *
-     * @return string Currency name (e.g. 'Euro', 'Dollar').
+     * @return string Currency name (e.g. 'Euro', 'US Dollar').
      */
     public function name(): string {
         return self::NAMES[$this->_id] ?? $this->_id;
@@ -235,19 +539,38 @@ class Currency {
     /**
      * Get the number of decimal places for this currency.
      *
-     * @return int 0 for zero-decimal currencies, 2 for all others.
+     * Returns the correct value per ISO 4217:
+     *   - 0 for JPY, KRW, VND, XAF, XOF, etc.
+     *   - 3 for BHD, IQD, JOD, KWD, LYD, OMR, TND
+     *   - 2 for everything else
+     *
+     * @param bool $practical If true, also returns 0 for currencies where minor
+     *                        units exist on paper but are not used (CZK, HUF, IDR, etc.).
+     * @return int Number of decimal places (0, 2, or 3).
      */
-    public function decimals(): int {
-        return in_array($this->_id, self::ZERO_DECIMAL) ? 0 : 2;
+    public function decimals(bool $practical = false): int {
+        if (in_array($this->_id, self::ZERO_DECIMAL)) return 0;
+        if (in_array($this->_id, self::THREE_DECIMAL)) return 3;
+        if ($practical && in_array($this->_id, self::ZERO_DECIMAL_PRACTICE)) return 0;
+        return 2;
     }
 
     /**
-     * Check whether this currency uses zero decimal places.
+     * Check whether this currency uses zero decimal places (ISO 4217).
      *
-     * @return bool True for currencies like HUF, JPY, KRW.
+     * @return bool True for JPY, KRW, VND, XAF, XOF, etc.
      */
     public function isZeroDecimal(): bool {
         return in_array($this->_id, self::ZERO_DECIMAL);
+    }
+
+    /**
+     * Check whether this currency uses three decimal places (ISO 4217).
+     *
+     * @return bool True for BHD, IQD, JOD, KWD, LYD, OMR, TND.
+     */
+    public function isThreeDecimal(): bool {
+        return in_array($this->_id, self::THREE_DECIMAL);
     }
 
     /**
@@ -321,6 +644,16 @@ class Currency {
     public static function nameFor(string $code): string {
         $code = strtoupper(trim($code));
         return self::NAMES[$code] ?? $code;
+    }
+
+    /**
+     * Get the number of decimals for a currency code without creating an instance.
+     *
+     * @param string $code ISO 4217 currency code.
+     * @return int Number of decimal places (0, 2, or 3).
+     */
+    public static function decimalsFor(string $code): int {
+        return (new self($code))->decimals();
     }
 
     /**
