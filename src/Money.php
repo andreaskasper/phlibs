@@ -4,7 +4,8 @@
  *
  * Represents a monetary amount with a currency code (ISO 4217). All arithmetic
  * operations return new Money instances (immutable pattern). Supports locale-aware
- * formatting, currency exchange via pluggable rate providers, and common comparisons.
+ * formatting, currency exchange via pluggable rate providers or live API lookup,
+ * and common comparisons.
  *
  * Delegates currency metadata (symbol, name, decimals) to the Currency class.
  *
@@ -13,7 +14,7 @@
  *
  * @author  Andreas Kasper <andreas.kasper@goo1.de>
  * @package phlibs
- * @version 2.1.0
+ * @version 2.2.0
  * @license FreeFoodLicense
  */
 
@@ -36,6 +37,38 @@ class Money {
      *                    Signature: function(string $from, string $to): ?float
      */
     private static $_exchangeRateProvider = null;
+
+    // ─── Live Exchange Rate Configuration ──────────────────────────────
+
+    /**
+     * @var bool Whether live exchange rate lookups are enabled.
+     */
+    private static bool $_liveExchangeEnabled = false;
+
+    /**
+     * @var string Base URL for the exchange rate API.
+     *             Default: frankfurter.app (free, no API key, ECB data).
+     *             Must support: GET {url}/latest?base={FROM}
+     *             Response: { "rates": { "USD": 1.08, ... } }
+     */
+    private static string $_exchangeApiUrl = 'https://api.frankfurter.dev';
+
+    /**
+     * @var int Cache TTL in seconds (default: 3600 = 1 hour).
+     */
+    private static int $_exchangeCacheTtl = 3600;
+
+    /**
+     * @var array<string, array{rates: array<string, float>, fetched_at: int}>
+     *      Static in-memory cache of exchange rates, keyed by base currency.
+     *      Each entry contains the rates array and a Unix timestamp.
+     */
+    private static array $_exchangeCache = [];
+
+    /**
+     * @var int HTTP timeout in seconds for API requests.
+     */
+    private static int $_exchangeApiTimeout = 5;
 
     // ─── Constructors ───────────────────────────────────────────────────
 
@@ -317,7 +350,6 @@ class Money {
         $sym = $cur->symbol();
         $symbolBefore = $cur->isSymbolBefore();
 
-        // European locales: comma decimal, dot thousands
         $european = in_array($lang2, ['de', 'fr', 'es', 'it', 'nl', 'pt', 'pl', 'hu', 'cs', 'ro', 'bg', 'hr']);
 
         if ($european) {
@@ -351,7 +383,7 @@ class Money {
         return number_format($this->_amount, $dec, '.', ',');
     }
 
-    // ─── Currency Exchange ──────────────────────────────────────────────
+    // ─── Exchange Rate Configuration ───────────────────────────────────
 
     /**
      * Register a custom exchange rate provider.
@@ -367,10 +399,76 @@ class Money {
     }
 
     /**
+     * Enable or disable live exchange rate lookups via HTTP API.
+     *
+     * When enabled, exchangeRate() and exchangeTo() will automatically fetch
+     * current rates from the configured API (default: frankfurter.app, ECB data).
+     * Rates are cached in-memory per base currency for the configured TTL.
+     *
+     * @param bool        $enabled Whether to enable live lookups (default: true).
+     * @param string|null $apiUrl  Custom API base URL (must support GET /latest?base=XXX).
+     * @param int|null    $ttl     Cache TTL in seconds (default: 3600 = 1 hour).
+     * @param int|null    $timeout HTTP request timeout in seconds (default: 5).
+     * @return void
+     */
+    public static function enableLiveExchange(
+        bool    $enabled = true,
+        ?string $apiUrl = null,
+        ?int    $ttl = null,
+        ?int    $timeout = null
+    ): void {
+        self::$_liveExchangeEnabled = $enabled;
+        if ($apiUrl !== null)  self::$_exchangeApiUrl     = rtrim($apiUrl, '/');
+        if ($ttl !== null)     self::$_exchangeCacheTtl   = $ttl;
+        if ($timeout !== null) self::$_exchangeApiTimeout = $timeout;
+    }
+
+    /**
+     * Check whether live exchange rate lookups are enabled.
+     *
+     * @return bool
+     */
+    public static function isLiveExchangeEnabled(): bool {
+        return self::$_liveExchangeEnabled;
+    }
+
+    /**
+     * Clear the in-memory exchange rate cache.
+     *
+     * Call this to force fresh rates on the next lookup.
+     *
+     * @return void
+     */
+    public static function clearExchangeCache(): void {
+        self::$_exchangeCache = [];
+    }
+
+    /**
+     * Get the current cache state for debugging.
+     *
+     * @return array<string, array{rates: array<string, float>, fetched_at: int, age_seconds: int}>
+     */
+    public static function getExchangeCacheInfo(): array {
+        $info = [];
+        foreach (self::$_exchangeCache as $base => $entry) {
+            $info[$base] = [
+                'rates'       => $entry['rates'],
+                'fetched_at'  => $entry['fetched_at'],
+                'age_seconds' => time() - $entry['fetched_at'],
+            ];
+        }
+        return $info;
+    }
+
+    // ─── Exchange Rate Lookup ───────────────────────────────────────────
+
+    /**
      * Get the exchange rate between two currencies.
      *
-     * Uses the registered provider if available, otherwise falls back to
-     * a built-in table of common rates.
+     * Lookup order:
+     *   1. Custom provider (if registered via setExchangeRateProvider)
+     *   2. Live API (if enabled via enableLiveExchange)
+     *   3. Hardcoded fallback rates
      *
      * @param string $from Source currency code.
      * @param string $to   Target currency code.
@@ -381,11 +479,19 @@ class Money {
         $to   = strtoupper($to);
         if ($from === $to) return 1.0;
 
+        // 1. Try custom provider
         if (self::$_exchangeRateProvider !== null) {
             $rate = call_user_func(self::$_exchangeRateProvider, $from, $to);
             if ($rate !== null) return (float)$rate;
         }
 
+        // 2. Try live API
+        if (self::$_liveExchangeEnabled) {
+            $rate = self::fetchLiveRate($from, $to);
+            if ($rate !== null) return $rate;
+        }
+
+        // 3. Fallback hardcoded rates
         $rates = [
             'EUR-PLN' => 4.0,
             'PLN-EUR' => 0.25,
@@ -394,10 +500,99 @@ class Money {
     }
 
     /**
-     * Convert this Money to another currency using an exchange rate.
+     * Fetch a live exchange rate from the configured API.
      *
-     * If no rate is provided, attempts to look up the rate via the registered
-     * provider or the built-in rate table.
+     * Rates are cached in-memory per base currency. When a cache entry exists
+     * and hasn't expired, the cached rate is returned without an HTTP call.
+     * A single API call fetches ALL rates for a base currency, so subsequent
+     * lookups from the same base are instant.
+     *
+     * @param string $from Source currency code.
+     * @param string $to   Target currency code.
+     * @return float|null Exchange rate, or null on API failure.
+     */
+    private static function fetchLiveRate(string $from, string $to): ?float {
+        // Check cache
+        if (isset(self::$_exchangeCache[$from])) {
+            $entry = self::$_exchangeCache[$from];
+            if ((time() - $entry['fetched_at']) < self::$_exchangeCacheTtl) {
+                return $entry['rates'][$to] ?? null;
+            }
+            // Expired — remove stale entry
+            unset(self::$_exchangeCache[$from]);
+        }
+
+        // Fetch from API
+        $url = self::$_exchangeApiUrl . '/latest?base=' . urlencode($from);
+
+        $context = stream_context_create([
+            'http' => [
+                'method'  => 'GET',
+                'timeout' => self::$_exchangeApiTimeout,
+                'header'  => "Accept: application/json\r\n"
+                           . "User-Agent: phlibs/Money (github.com/andreaskasper/phlibs)\r\n",
+                'ignore_errors' => true,
+            ],
+            'ssl' => [
+                'verify_peer' => true,
+                'verify_peer_name' => true,
+            ],
+        ]);
+
+        $json = @file_get_contents($url, false, $context);
+        if ($json === false) {
+            return null;
+        }
+
+        $data = @json_decode($json, true);
+        if (!is_array($data) || !isset($data['rates']) || !is_array($data['rates'])) {
+            return null;
+        }
+
+        // Store ALL rates for this base currency in cache
+        self::$_exchangeCache[$from] = [
+            'rates'      => $data['rates'],
+            'fetched_at' => time(),
+        ];
+
+        return $data['rates'][$to] ?? null;
+    }
+
+    /**
+     * Prefetch exchange rates for one or more base currencies.
+     *
+     * Useful for warming the cache before processing multiple conversions.
+     * Silently ignores API failures.
+     *
+     * @param string|array $baseCurrencies One or more ISO 4217 base currency codes.
+     * @return void
+     */
+    public static function prefetchRates($baseCurrencies): void {
+        if (!self::$_liveExchangeEnabled) return;
+        if (is_string($baseCurrencies)) $baseCurrencies = [$baseCurrencies];
+
+        foreach ($baseCurrencies as $base) {
+            $base = strtoupper(trim($base));
+            // Skip if already cached and not expired
+            if (isset(self::$_exchangeCache[$base])) {
+                if ((time() - self::$_exchangeCache[$base]['fetched_at']) < self::$_exchangeCacheTtl) {
+                    continue;
+                }
+            }
+            // Fetch (will populate cache as side-effect)
+            self::fetchLiveRate($base, 'USD'); // Target doesn't matter, all rates are cached
+        }
+    }
+
+    // ─── Currency Conversion ───────────────────────────────────────────
+
+    /**
+     * Convert this Money to another currency.
+     *
+     * If no rate is provided, attempts to look up the rate via:
+     *   1. Custom provider
+     *   2. Live API (if enabled)
+     *   3. Hardcoded fallback rates
      *
      * @param string     $targetCurrency ISO 4217 currency code.
      * @param float|null $rate           Exchange rate (optional, auto-lookup if null).
@@ -413,9 +608,11 @@ class Money {
             $rate = self::exchangeRate($this->_currency, $targetCurrency);
         }
         if ($rate === null) {
+            $hint = self::$_liveExchangeEnabled
+                ? "Live API returned no rate."
+                : "Enable live rates with Money::enableLiveExchange() or register a provider.";
             throw new \RuntimeException(
-                "No exchange rate available for {$this->_currency} -> {$targetCurrency}. "
-                . "Register a provider via Money::setExchangeRateProvider()."
+                "No exchange rate available for {$this->_currency} -> {$targetCurrency}. {$hint}"
             );
         }
         return new self($this->_amount * $rate, $targetCurrency);

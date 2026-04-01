@@ -1,6 +1,6 @@
 # 📚 phlibs — PHP Class Library
 
-A lightweight PHP utility library extracted from the ASICMS framework. Provides database abstraction (MySQL/MariaDB via MySQLi and PDO), monetary value objects with currency support, HTTP page caching, web content caching, and string helpers.
+A lightweight PHP utility library extracted from the ASICMS framework. Provides database abstraction (MySQL/MariaDB via MySQLi and PDO), monetary value objects with live exchange rates, HTTP page caching, web content caching, and string helpers.
 
 [![PHP Version](https://img.shields.io/badge/PHP-%3E%3D7.4-blue.svg)](https://php.net)
 [![License](https://img.shields.io/badge/license-FreeFoodLicense-green.svg)](https://packagist.org/packages/andreaskasper/phlibs)
@@ -95,7 +95,7 @@ $row = $db->cmdrow('SELECT * FROM users WHERE id = {0}', [42]);
 
 ### Money — Immutable Monetary Value Object
 
-Represents monetary amounts with currency awareness. Fully immutable — all arithmetic operations return new instances. Supports locale-aware formatting and pluggable exchange rates.
+Represents monetary amounts with currency awareness. Fully immutable — all arithmetic operations return new instances. Supports locale-aware formatting, live exchange rates, and pluggable rate providers.
 
 ```php
 use phlibs\Money;
@@ -129,21 +129,63 @@ $price->isPositive();              // true
 $price->isZero();                  // false
 $price->equals(Money::EUR(19.99)); // true
 $price->compareTo($other);        // -1, 0, or 1
+```
 
-// Currency exchange
+#### Live Exchange Rates
+
+Fetch real-time exchange rates from the [Frankfurter API](https://frankfurter.app) (ECB data, free, no API key):
+
+```php
+// Enable live exchange rates (one-time setup)
+Money::enableLiveExchange();
+
+// Convert with auto-fetched rates (cached for 1 hour)
+$eur = Money::EUR(100);
+$usd = $eur->exchangeTo('USD');   // Fetches live EUR→USD rate
+$gbp = $eur->exchangeTo('GBP');   // Same API call, rate already cached
+
+// Check the rate directly
+$rate = Money::exchangeRate('EUR', 'USD'); // e.g. 1.0847
+
+// Custom configuration
+Money::enableLiveExchange(
+    enabled: true,
+    apiUrl:  'https://api.frankfurter.dev',  // or your own API
+    ttl:     7200,                            // Cache for 2 hours
+    timeout: 3                                // 3s HTTP timeout
+);
+
+// Prefetch rates to warm the cache
+Money::prefetchRates(['EUR', 'USD', 'GBP']);
+
+// Debug cache state
+$info = Money::getExchangeCacheInfo();
+// ['EUR' => ['rates' => [...], 'fetched_at' => 1719..., 'age_seconds' => 42]]
+
+// Force refresh
+Money::clearExchangeCache();
+```
+
+The lookup order is: custom provider → live API → hardcoded fallback. You can also combine a custom provider with live rates:
+
+```php
+// Custom provider for special rates, live API as fallback
 Money::setExchangeRateProvider(function($from, $to) {
-    return MyRateService::getRate($from, $to);
+    if ($from === 'EUR' && $to === 'SPECIAL') return 42.0;
+    return null; // Fall through to live API
 });
-$inPln = $price->exchangeTo('PLN');        // Uses provider
-$inUsd = $price->exchangeTo('USD', 1.08);  // Explicit rate
+Money::enableLiveExchange();
 ```
 
 **Features:**
 - Immutable value object pattern
 - Static factory methods (`Money::EUR(amount)`, `Money::USD(amount)`, …)
 - Locale-aware formatting (German, English, European conventions)
-- Zero-decimal currencies (HUF, JPY, CZK)
+- Zero-decimal currencies (HUF, JPY, CZK) and 3-decimal (KWD, BHD, OMR)
 - Symbol placement (before for USD/GBP, after for EUR/CHF)
+- Live exchange rates via frankfurter.app (ECB data, free, no API key)
+- In-memory rate cache with configurable TTL
+- Cache prefetching for batch conversions
 - Pluggable exchange rate provider
 - Comparison methods (`equals`, `compareTo`, `isZero`, `isPositive`, `isNegative`)
 - `toArray()` and `jsonSerialize()` for serialization
@@ -152,7 +194,7 @@ $inUsd = $price->exchangeTo('USD', 1.08);  // Explicit rate
 
 ### Currency — Currency Value Object
 
-Represents an ISO 4217 currency with its metadata. Acts as the single source of truth for symbols, names, decimal behavior, and symbol placement across the library. Covers 45+ currencies.
+Represents an ISO 4217 currency with its metadata. Acts as the single source of truth for symbols, names, decimal behavior, and symbol placement across the library. Covers 115+ currencies.
 
 ```php
 use phlibs\Currency;
@@ -170,6 +212,7 @@ $eur->decimals;    // 2
 
 // Query behavior
 $eur->isZeroDecimal();   // false
+$eur->isThreeDecimal();  // false
 $eur->isSymbolBefore();  // false
 $eur->isKnown();         // true
 $eur->equals($usd);      // false
@@ -177,14 +220,12 @@ $eur->equals($usd);      // false
 // Static helpers (no instance needed)
 Currency::symbolFor('GBP');  // '£'
 Currency::nameFor('JPY');    // 'Yen'
-Currency::allCodes();        // ['AED', 'ARS', 'AUD', ...]
+Currency::allCodes();        // ['AED', 'AFN', 'ALL', ...]
 
 // Format amounts directly
 $eur->format(19.99, 'de');   // '19,99€'
 $eur->format();              // '€' (symbol only)
 ```
-
-**Supported currencies:** AED, ARS, AUD, BGN, BRL, CAD, CHF, CLP, CNY, COP, CZK, DKK, EGP, EUR, GBP, HKD, HRK, HUF, IDR, ILS, INR, ISK, JPY, KRW, MAD, MXN, MYR, NOK, NZD, PEN, PHP, PKR, PLN, QAR, RON, RUB, SAR, SEK, SGD, THB, TRY, TWD, UAH, USD, VND, ZAR
 
 ---
 
@@ -238,6 +279,7 @@ string2::Abkuerzen('Long text...', 50);    // Truncated at word boundary
 - PHP >= 7.4
 - MySQLi extension (for `SQL` class)
 - PDO extension (for `DB` class)
+- `allow_url_fopen = On` (for live exchange rates)
 
 ---
 
