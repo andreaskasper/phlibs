@@ -1,0 +1,51 @@
+name: Tests
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        php: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+
+    services:
+      mysql:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mysqli, pdo, pdo_mysql, mbstring
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Create test databases
+        run: |
+          mysql -h 127.0.0.1 -u root -proot -e 'CREATE DATABASE IF NOT EXISTS main;'
+          mysql -h 127.0.0.1 -u root -proot -e 'CREATE DATABASE IF NOT EXISTS test;'
+          mysql -h 127.0.0.1 -u root -proot -e "CREATE TABLE IF NOT EXISTS main.cache (id VARCHAR(64) PRIMARY KEY, value LONGTEXT, dt_created INT, dt_timeout INT) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
+
+      - name: Run tests
+        run: vendor/bin/phpunit

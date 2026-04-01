@@ -1,22 +1,22 @@
 <?php
 /**
+ * Unit tests for the phlibs\WebCache class.
  *
- *
- *
- *
- * @license   http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
+ * @license FreeFoodLicense
  */
+
 namespace phlibs\Test;
 
 use phlibs\WebCache;
 use PHPUnit\Framework\TestCase;
-/**
- * PHPMailer - PHP email transport unit test class.
- */
-final class WebCacheTest extends TestCase {
-	
-	public function testValidate() {
-		$this->assertTrue(true);
-	}
-	
+
+final class WebCacheTest extends TestCase
+{
+    /**
+     * Test that the WebCache class exists and is loadable.
+     */
+    public function testClassExists(): void
+    {
+        $this->assertTrue(class_exists(WebCache::class));
+    }
 }
