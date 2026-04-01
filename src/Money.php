@@ -6,12 +6,14 @@
  * operations return new Money instances (immutable pattern). Supports locale-aware
  * formatting, currency exchange via pluggable rate providers, and common comparisons.
  *
+ * Delegates currency metadata (symbol, name, decimals) to the Currency class.
+ *
  * Note: Internally stores amounts as float. For applications requiring exact decimal
  * arithmetic (e.g. banking), consider using bcmath or an integer-based (cents) approach.
  *
  * @author  Andreas Kasper <andreas.kasper@goo1.de>
  * @package phlibs
- * @version 2.0.0
+ * @version 2.1.0
  * @license FreeFoodLicense
  */
 
@@ -34,60 +36,6 @@ class Money {
      *                    Signature: function(string $from, string $to): ?float
      */
     private static $_exchangeRateProvider = null;
-
-    /**
-     * @var array<string, string> Map of currency code => display name.
-     */
-    private const CURRENCY_NAMES = [
-        'AUD' => 'Australian Dollar',
-        'CAD' => 'Canadian Dollar',
-        'CHF' => 'Franc',
-        'CNY' => 'Yuan',
-        'CZK' => 'Koruna',
-        'DKK' => 'Krone',
-        'EUR' => 'Euro',
-        'GBP' => 'Pound',
-        'HUF' => 'Forint',
-        'JPY' => 'Yen',
-        'NOK' => 'Krone',
-        'PLN' => 'Złoty',
-        'RON' => 'Leu',
-        'SEK' => 'Krona',
-        'TRY' => 'Lira',
-        'USD' => 'Dollar',
-    ];
-
-    /**
-     * @var array<string, string> Map of currency code => symbol.
-     */
-    private const CURRENCY_SYMBOLS = [
-        'AUD' => 'A$',
-        'CAD' => 'C$',
-        'CHF' => 'CHF',
-        'CNY' => '¥',
-        'CZK' => 'Kč',
-        'DKK' => 'kr',
-        'EUR' => '€',
-        'GBP' => '£',
-        'HUF' => 'Ft',
-        'JPY' => '¥',
-        'NOK' => 'kr',
-        'PLN' => 'zł',
-        'RON' => 'lei',
-        'SEK' => 'kr',
-        'TRY' => '₺',
-        'USD' => '$',
-    ];
-
-    /**
-     * @var array<string> Currencies that typically display without decimal places.
-     */
-    private const ZERO_DECIMAL_CURRENCIES = ['HUF', 'JPY', 'CZK'];
-
-    /**
-     * @var array<string> Currencies where the symbol is placed before the amount.
-     */
-    private const SYMBOL_BEFORE = ['USD', 'GBP', 'AUD', 'CAD'];
 
     // ─── Constructors ───────────────────────────────────────────────────
 
@@ -185,30 +133,39 @@ class Money {
     }
 
     /**
-     * Get the currency symbol.
+     * Get the Currency value object for this money's currency.
+     *
+     * @return Currency
+     */
+    public function currencyObject(): Currency {
+        return new Currency($this->_currency);
+    }
+
+    /**
+     * Get the currency symbol (delegated to Currency).
      *
      * @return string Symbol (e.g. '€', '$') or the currency code if unknown.
      */
     public function symbol(): string {
-        return self::CURRENCY_SYMBOLS[$this->_currency] ?? $this->_currency;
+        return Currency::symbolFor($this->_currency);
     }
 
     /**
-     * Get the currency display name.
+     * Get the currency display name (delegated to Currency).
      *
      * @return string Human-readable name (e.g. 'Euro', 'Dollar') or the code if unknown.
      */
     public function name(): string {
-        return self::CURRENCY_NAMES[$this->_currency] ?? $this->_currency;
+        return Currency::nameFor($this->_currency);
     }
 
     /**
-     * Get the number of decimal places for this currency.
+     * Get the number of decimal places for this currency (delegated to Currency).
      *
      * @return int 0 for zero-decimal currencies (HUF, JPY, …), 2 for all others.
      */
     public function decimals(): int {
-        return in_array($this->_currency, self::ZERO_DECIMAL_CURRENCIES) ? 0 : 2;
+        return $this->currencyObject()->decimals();
     }
 
     // ─── Arithmetic (immutable — always returns new instance) ────────────
@@ -355,16 +312,17 @@ class Money {
     public function format(?string $lang = null): string {
         $lang = $lang ?? $_ENV["lang"] ?? "en";
         $lang2 = substr($lang, 0, 2);
-        $dec = $this->decimals();
-        $sym = $this->symbol();
-        $symbolBefore = in_array($this->_currency, self::SYMBOL_BEFORE);
+        $cur = $this->currencyObject();
+        $dec = $cur->decimals();
+        $sym = $cur->symbol();
+        $symbolBefore = $cur->isSymbolBefore();
 
-        // Determine separators based on locale
-        if ($lang2 === 'de' || $lang2 === 'fr' || $lang2 === 'es' || $lang2 === 'it' || $lang2 === 'nl' || $lang2 === 'pt' || $lang2 === 'pl' || $lang2 === 'hu') {
-            // European format: 1.234,56
+        // European locales: comma decimal, dot thousands
+        $european = in_array($lang2, ['de', 'fr', 'es', 'it', 'nl', 'pt', 'pl', 'hu', 'cs', 'ro', 'bg', 'hr']);
+
+        if ($european) {
             $formatted = number_format($this->_amount, $dec, ',', '.');
         } else {
-            // English format: 1,234.56
             $formatted = number_format($this->_amount, $dec, '.', ',');
         }
 
@@ -383,9 +341,11 @@ class Money {
     public function formatPlain(?string $lang = null): string {
         $lang = $lang ?? $_ENV["lang"] ?? "en";
         $lang2 = substr($lang, 0, 2);
-        $dec = $this->decimals();
+        $dec = $this->currencyObject()->decimals();
 
-        if ($lang2 === 'de' || $lang2 === 'fr' || $lang2 === 'es' || $lang2 === 'it') {
+        $european = in_array($lang2, ['de', 'fr', 'es', 'it', 'nl', 'pt', 'pl', 'hu']);
+
+        if ($european) {
             return number_format($this->_amount, $dec, ',', '.');
         }
         return number_format($this->_amount, $dec, '.', ',');
@@ -421,13 +381,11 @@ class Money {
         $to   = strtoupper($to);
         if ($from === $to) return 1.0;
 
-        // Try custom provider first
         if (self::$_exchangeRateProvider !== null) {
             $rate = call_user_func(self::$_exchangeRateProvider, $from, $to);
             if ($rate !== null) return (float)$rate;
         }
 
-        // Fallback: hardcoded rates (override with setExchangeRateProvider)
         $rates = [
             'EUR-PLN' => 4.0,
             'PLN-EUR' => 0.25,

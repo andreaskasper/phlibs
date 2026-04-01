@@ -1,6 +1,6 @@
 # 📚 phlibs — PHP Class Library
 
-A lightweight PHP utility library extracted from the ASICMS framework. Provides database abstraction (MySQL/MariaDB via MySQLi and PDO), HTTP page caching, web content caching, monetary value objects, and string helpers.
+A lightweight PHP utility library extracted from the ASICMS framework. Provides database abstraction (MySQL/MariaDB via MySQLi and PDO), monetary value objects with currency support, HTTP page caching, web content caching, and string helpers.
 
 [![PHP Version](https://img.shields.io/badge/PHP-%3E%3D7.4-blue.svg)](https://php.net)
 [![License](https://img.shields.io/badge/license-FreeFoodLicense-green.svg)](https://packagist.org/packages/andreaskasper/phlibs)
@@ -147,6 +147,44 @@ $inUsd = $price->exchangeTo('USD', 1.08);  // Explicit rate
 - Pluggable exchange rate provider
 - Comparison methods (`equals`, `compareTo`, `isZero`, `isPositive`, `isNegative`)
 - `toArray()` and `jsonSerialize()` for serialization
+
+---
+
+### Currency — Currency Value Object
+
+Represents an ISO 4217 currency with its metadata. Acts as the single source of truth for symbols, names, decimal behavior, and symbol placement across the library. Covers 45+ currencies.
+
+```php
+use phlibs\Currency;
+
+// Create
+$eur = new Currency('EUR');
+$usd = Currency::get('USD');
+
+// Properties
+$eur->id;          // 'EUR'
+$eur->symbol;      // '€'
+$eur->name;        // 'Euro'
+$eur->decimals;    // 2
+(string) $eur;     // 'EUR'
+
+// Query behavior
+$eur->isZeroDecimal();   // false
+$eur->isSymbolBefore();  // false
+$eur->isKnown();         // true
+$eur->equals($usd);      // false
+
+// Static helpers (no instance needed)
+Currency::symbolFor('GBP');  // '£'
+Currency::nameFor('JPY');    // 'Yen'
+Currency::allCodes();        // ['AED', 'ARS', 'AUD', ...]
+
+// Format amounts directly
+$eur->format(19.99, 'de');   // '19,99€'
+$eur->format();              // '€' (symbol only)
+```
+
+**Supported currencies:** AED, ARS, AUD, BGN, BRL, CAD, CHF, CLP, CNY, COP, CZK, DKK, EGP, EUR, GBP, HKD, HRK, HUF, IDR, ILS, INR, ISK, JPY, KRW, MAD, MXN, MYR, NOK, NZD, PEN, PHP, PKR, PLN, QAR, RON, RUB, SAR, SEK, SGD, THB, TRY, TWD, UAH, USD, VND, ZAR
 
 ---
 
