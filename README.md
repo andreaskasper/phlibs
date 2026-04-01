@@ -1,6 +1,6 @@
 # 📚 phlibs — PHP Class Library
 
-A lightweight PHP utility library extracted from the ASICMS framework. Provides database abstraction (MySQL/MariaDB via MySQLi and PDO), HTTP page caching, web content caching, and string helpers.
+A lightweight PHP utility library extracted from the ASICMS framework. Provides database abstraction (MySQL/MariaDB via MySQLi and PDO), HTTP page caching, web content caching, monetary value objects, and string helpers.
 
 [![PHP Version](https://img.shields.io/badge/PHP-%3E%3D7.4-blue.svg)](https://php.net)
 [![License](https://img.shields.io/badge/license-FreeFoodLicense-green.svg)](https://packagist.org/packages/andreaskasper/phlibs)
@@ -90,6 +90,63 @@ DB::init(0, 'mysql:host=localhost;dbname=mydb', 'user', 'password');
 $db = new DB(0);
 $row = $db->cmdrow('SELECT * FROM users WHERE id = {0}', [42]);
 ```
+
+---
+
+### Money — Immutable Monetary Value Object
+
+Represents monetary amounts with currency awareness. Fully immutable — all arithmetic operations return new instances. Supports locale-aware formatting and pluggable exchange rates.
+
+```php
+use phlibs\Money;
+
+// Create
+$price = new Money(19.99, 'EUR');
+$price = Money::EUR(19.99);                         // Static factory
+$price = Money::fromString('EUR', '1.234,56');       // German format
+
+// Arithmetic (all return new instances)
+$total    = $price->add(5.00);                       // 24.99 EUR
+$diff     = $price->subtract(Money::EUR(10));         // 9.99 EUR
+$doubled  = $price->multiply(2);                      // 39.98 EUR
+$split    = $price->divide(3);                        // 6.66 EUR
+$absolute = $price->negate()->abs();                  // 19.99 EUR
+
+// Formatting
+echo $price->format('de');     // "19,99€"
+echo $price->format('en');     // "19.99€"
+echo Money::USD(42)->format(); // "$42.00"
+echo (string) $price;          // Uses default locale
+
+// Properties
+$price->amount;    // 19.99
+$price->currency;  // 'EUR'
+$price->symbol;    // '€'
+$price->name;      // 'Euro'
+
+// Comparisons
+$price->isPositive();              // true
+$price->isZero();                  // false
+$price->equals(Money::EUR(19.99)); // true
+$price->compareTo($other);        // -1, 0, or 1
+
+// Currency exchange
+Money::setExchangeRateProvider(function($from, $to) {
+    return MyRateService::getRate($from, $to);
+});
+$inPln = $price->exchangeTo('PLN');        // Uses provider
+$inUsd = $price->exchangeTo('USD', 1.08);  // Explicit rate
+```
+
+**Features:**
+- Immutable value object pattern
+- Static factory methods (`Money::EUR(amount)`, `Money::USD(amount)`, …)
+- Locale-aware formatting (German, English, European conventions)
+- Zero-decimal currencies (HUF, JPY, CZK)
+- Symbol placement (before for USD/GBP, after for EUR/CHF)
+- Pluggable exchange rate provider
+- Comparison methods (`equals`, `compareTo`, `isZero`, `isPositive`, `isNegative`)
+- `toArray()` and `jsonSerialize()` for serialization
 
 ---
 
